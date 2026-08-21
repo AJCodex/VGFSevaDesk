@@ -1,4 +1,4 @@
-const currentLanguage = sessionStorage.getItem('vgf-language') || 'hi';
+const currentLanguage = sessionStorage.getItem('vgf-language') || 'en';
 const isHindi = currentLanguage === 'hi';
 const tr = (english, hindi) => isHindi ? hindi : english;
 
@@ -26,6 +26,50 @@ let tickets = [
   { id: 'VGF-00113', name: 'Vikram Joshi', initials: 'VJ', city: 'Pune', category: 'legal', received: '14 Aug 2026', status: 'review', remark: 'Awaiting initial caseworker review.', files: 0 }
 ];
 
+const seedHindi = new Map([
+  ['Today, 09:42', 'आज, 09:42'], ['Today, 08:16', 'आज, 08:16'], ['Yesterday', 'कल'],
+  ['18 Aug 2026', '18 अगस्त 2026'], ['17 Aug 2026', '17 अगस्त 2026'], ['16 Aug 2026', '16 अगस्त 2026'],
+  ['15 Aug 2026', '15 अगस्त 2026'], ['14 Aug 2026', '14 अगस्त 2026'],
+  ['Request is queued for initial review. The team will respond within 2 working days.', 'अनुरोध प्रारंभिक समीक्षा के लिए कतार में है। टीम 2 कार्य दिवसों में उत्तर देगी।'],
+  ['A caseworker has been assigned and will connect with the applicant shortly.', 'केसवर्कर सौंपा जा चुका है और शीघ्र ही आवेदक से संपर्क करेगा।'],
+  ['Documents are being reviewed by the Yuva Kaushal team.', 'दस्तावेजों की समीक्षा युवा कौशल टीम द्वारा की जा रही है।'],
+  ['Support connected the case with a local Gaushala partner.', 'मामले को स्थानीय गौशाला सहयोगी से जोड़ा गया।'],
+  ['Request is queued for review by the Nari Samridhi team.', 'अनुरोध नारी समृद्धि टीम की समीक्षा के लिए कतार में है।'],
+  ['Assigned to a legal assistance advisor for follow-up.', 'आगे की कार्रवाई हेतु कानूनी सहायता सलाहकार को सौंपा गया।'],
+  ['The applicant was connected to a healthcare support partner.', 'आवेदक को स्वास्थ्य सहायता सहयोगी से जोड़ा गया।'],
+  ['A mentor match is being identified.', 'उपयुक्त मेंटर की पहचान की जा रही है।'],
+  ['The request is in conversation with the women empowerment team.', 'अनुरोध पर महिला सशक्तिकरण टीम से चर्चा चल रही है।'],
+  ['Food and medical support were coordinated with a local partner.', 'भोजन और चिकित्सा सहायता स्थानीय सहयोगी के साथ समन्वित की गई।'],
+  ['Scholarship eligibility review is in progress.', 'छात्रवृत्ति पात्रता की समीक्षा जारी है।'],
+  ['Awaiting initial caseworker review.', 'प्रारंभिक केसवर्कर समीक्षा की प्रतीक्षा है।']
+]);
+
+if (isHindi) tickets.forEach((ticket) => {
+  ticket.received = seedHindi.get(ticket.received) || ticket.received;
+  ticket.remark = seedHindi.get(ticket.remark) || ticket.remark;
+});
+
+function receivedRank(value) {
+  if (value === 'Just now') return Date.now();
+  const today = value.match(/^Today, (\d{1,2}):(\d{2})$/);
+  if (today) return new Date(2026, 7, 20, Number(today[1]), Number(today[2])).getTime();
+  if (value === 'Yesterday') return new Date(2026, 7, 19, 12, 0).getTime();
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+tickets.forEach((ticket) => { ticket.receivedAt = receivedRank(ticket.received); });
+
+let sortState = { key: null, dir: 1 };
+
+const sortValues = {
+  request: (ticket) => ticket.name.toLowerCase(),
+  category: (ticket) => `${categoryInfo[ticket.category].label} ${categoryInfo[ticket.category].sub}`.toLowerCase(),
+  assignee: (ticket) => categoryInfo[ticket.category].assignee.toLowerCase(),
+  received: (ticket) => ticket.receivedAt,
+  status: (ticket) => statusInfo[ticket.status].label.toLowerCase()
+};
+
 const activity = [
   { icon: '✓', tone: '', copy: tr('<strong>VGF-00121</strong> was marked resolved by Suresh', '<strong>VGF-00121</strong> को Suresh ने समाधान किया'), time: tr('28 minutes ago', '28 मिनट पहले') },
   { icon: '＋', tone: 'amber', copy: tr('<strong>New request</strong> from Kavita Verma was received', 'Kavita Verma का <strong>नया अनुरोध</strong> प्राप्त हुआ'), time: tr('1 hour ago', '1 घंटे पहले') },
@@ -51,6 +95,7 @@ const hindiText = new Map([
 [['Full name *', 'पूरा नाम *'], ['Phone number *', 'फोन नंबर *'], ['City / address *', 'शहर / पता *'], ['Assistance category *', 'सहायता श्रेणी *'], ['Supporting files', 'सहायक फाइलें'], ['Insights', 'अंतर्दृष्टि'], ['Understand response time, demand and meaningful outcomes.', 'प्रतिक्रिया समय, मांग और सार्थक परिणामों को समझें।'], ['Export report ↓', 'रिपोर्ट एक्सपोर्ट करें ↓'], ['Detailed reporting is being shaped', 'विस्तृत रिपोर्ट तैयार की जा रही है'], ['Impact and operations reporting will live here, with exports for the VGF team.', 'VGF टीम के लिए प्रभाव और संचालन रिपोर्ट यहां उपलब्ध होगी।'], ['Workspace', 'कार्यस्थल'], ['Keep the way VGF works clear and consistent.', 'VGF के काम करने के तरीके को स्पष्ट और एकसमान रखें।'], ['Team and permissions', 'टीम और अनुमतियां'], ['Manage administrators and caseworkers.', 'प्रशासकों और केसवर्करों का प्रबंधन करें।'], ['Response goals', 'प्रतिक्रिया लक्ष्य'], ['Set category-specific response expectations.', 'श्रेणी के अनुसार प्रतिक्रिया लक्ष्य निर्धारित करें।'], ['Notifications', 'सूचनाएं'], ['Configure email and WhatsApp updates.', 'ईमेल और WhatsApp अपडेट व्यवस्थित करें।'], ['Drop files here or browse', 'फाइल यहां छोड़ें या ब्राउज़ करें'], ['DOC, DOCX, PDF or images up to 5 MB', 'DOC, DOCX, PDF या 5 MB तक के चित्र'], ['I confirm the applicant has agreed to VGF using these details to review this request.', 'मैं पुष्टि करता हूं कि आवेदक ने VGF को इन विवरणों से अनुरोध की समीक्षा करने की सहमति दी है।'], ['Within 2 working days', '2 कार्य दिवसों के भीतर'], ['Start a request', 'अनुरोध शुरू करें'], ['VGF assistance workflow', 'VGF सहायता प्रक्रिया'], ['Auto-routing', 'स्वचालित मार्ग निर्धारण'], ['Caseworker', 'केसवर्कर'], ['Applicant + VGF', 'आवेदक + VGF'], ['Medical, mentorship, scholarship, women, animal or legal', 'चिकित्सा, मार्गदर्शन, छात्रवृत्ति, महिला, जीवदया या कानूनी सहायता'], ['Collect the minimum applicant details.', 'आवेदक की न्यूनतम जानकारी ही लें।'], ['Accept DOC, DOCX, PDF and images up to 5 MB.', 'DOC, DOCX, PDF और 5 MB तक के चित्र स्वीकार करें।'], ['Do not request sensitive health information in this MVP.', 'इस MVP में संवेदनशील स्वास्थ्य जानकारी न मांगें।'], ['Keep internal notes separate from applicant remarks.', 'आंतरिक टिप्पणियों को आवेदक की टिप्पणी से अलग रखें।'], ['Record key status and assignment events.', 'मुख्य स्थिति और असाइनमेंट इवेंट दर्ज करें।']].forEach(([english, hindi]) => hindiText.set(english, hindi));
 
 ['Overview', 'All requests', 'New request', 'Process flow', 'Reports', 'Settings'].forEach((label) => hindiText.set(label, ({ Overview: 'डैशबोर्ड', 'All requests': 'सभी अनुरोध', 'New request': 'नया अनुरोध', 'Process flow': 'प्रक्रिया प्रवाह', Reports: 'रिपोर्ट', Settings: 'सेटिंग्स' })[label]));
+[['Request', 'अनुरोध'], ['Category', 'श्रेणी'], ['Assigned to', 'सौंपा गया'], ['Received', 'प्राप्ति'], ['Status', 'स्थिति']].forEach(([english, hindi]) => hindiText.set(english, hindi));
 
 function translateStaticText() {
   if (!isHindi) return;
@@ -73,8 +118,8 @@ function statusBadge(status) {
 
 function ticketRow(ticket, wide = false, index = 0) {
   const category = categoryInfo[ticket.category];
-  const assignee = `<div class="request-person"><div class="avatar ${avatarClass(index + 1)}">${category.initials}</div><div>${escapeHtml(category.assignee)}<small>${wide ? 'Caseworker' : ticket.id}</small></div></div>`;
-  return `<tr data-ticket-id="${ticket.id}"><td><div class="request-person"><div class="avatar ${avatarClass(index)}">${escapeHtml(ticket.initials)}</div><div>${escapeHtml(ticket.name)}<small>${escapeHtml(ticket.city)} · ${ticket.id}</small></div></div></td><td class="category-cell"><span class="category-icon"><img src="${category.icon}" alt=""></span>${escapeHtml(category.label)}<small>${escapeHtml(category.sub)}</small></td>${wide ? `<td>${assignee}</td>` : ''}<td>${escapeHtml(ticket.received)}</td><td>${statusBadge(ticket.status)}</td><td><button class="row-action" data-action="open-ticket" data-ticket-id="${ticket.id}" aria-label="टिकट खोलें ${ticket.id}">→</button></td></tr>`;
+  const assignee = `<div class="request-person"><div class="avatar ${avatarClass(index + 1)}">${category.initials}</div><div>${escapeHtml(category.assignee)}<small>${wide ? tr('Caseworker', 'केसवर्कर') : ticket.id}</small></div></div>`;
+  return `<tr data-ticket-id="${ticket.id}" tabindex="0" role="button" aria-label="${tr('Open', 'टिकट खोलें')} ${ticket.id}"><td><div class="request-person"><div class="avatar ${avatarClass(index)}">${escapeHtml(ticket.initials)}</div><div>${escapeHtml(ticket.name)}<small>${escapeHtml(ticket.city)} · ${ticket.id}</small></div></div></td><td class="category-cell"><span class="category-icon"><img src="${category.icon}" alt=""></span>${escapeHtml(category.label)}<small>${escapeHtml(category.sub)}</small></td>${wide ? `<td>${assignee}</td>` : ''}<td class="received-cell">${escapeHtml(ticket.received)}</td><td>${statusBadge(ticket.status)}</td></tr>`;
 }
 
 function renderTickets() {
@@ -87,8 +132,16 @@ function renderTickets() {
     const matchesSearch = !search || [ticket.id, ticket.name, ticket.city, info.label, info.sub].join(' ').toLowerCase().includes(search);
     return matchesSearch && (status === 'all' || ticket.status === status) && (category === 'all' || ticket.category === category);
   });
-  $('#allTickets').innerHTML = filtered.length ? filtered.map((ticket, index) => ticketRow(ticket, true, index)).join('') : `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⌕</div><h2>No requests found</h2><p>Try a different search or filter.</p></div></td></tr>`;
-  $('#resultCount').textContent = `${filtered.length} request${filtered.length === 1 ? '' : 's'}`;
+  if (sortState.key) {
+    const value = sortValues[sortState.key];
+    filtered.sort((a, b) => {
+      const left = value(a);
+      const right = value(b);
+      return (left < right ? -1 : left > right ? 1 : 0) * sortState.dir;
+    });
+  }
+  $('#allTickets').innerHTML = filtered.length ? filtered.map((ticket, index) => ticketRow(ticket, true, index)).join('') : `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">⌕</div><h2>${tr('No requests found', 'कोई अनुरोध नहीं मिला')}</h2><p>${tr('Try a different search or filter.', 'कोई दूसरी खोज या फ़िल्टर आज़माएं।')}</p></div></td></tr>`;
+  $('#resultCount').textContent = tr(`${filtered.length} request${filtered.length === 1 ? '' : 's'}`, `${filtered.length} अनुरोध`);
 }
 
 function renderActivity() {
@@ -134,14 +187,14 @@ function openTicket(ticketId) {
   const ticket = tickets.find((item) => item.id === ticketId);
   if (!ticket) return;
   const category = categoryInfo[ticket.category];
-  $('#modalContent').innerHTML = `<span class="modal-kicker">${ticket.id} · सहायता अनुरोध</span><h2 class="modal-title">${escapeHtml(ticket.name)}</h2><p class="modal-subtitle">${escapeHtml(category.label)} · ${escapeHtml(category.sub)} · प्राप्ति: ${escapeHtml(ticket.received)}</p><div class="detail-grid"><div class="detail-item"><span>संपर्क</span><strong>${escapeHtml(ticket.phone || '+91 98 7654 3210')}</strong></div><div class="detail-item"><span>स्थान</span><strong>${escapeHtml(ticket.city)}</strong></div><div class="detail-item"><span>सौंपा गया</span><strong>${escapeHtml(category.assignee)}</strong></div><div class="detail-item"><span>संलग्नक</span><strong>${ticket.files} फाइल</strong></div></div><div class="modal-remark"><strong>आवेदक को दिखाई देने वाली टिप्पणी</strong><br>${escapeHtml(ticket.remark)}</div><div class="modal-actions"><select id="modalStatus"><option value="review" ${ticket.status === 'review' ? 'selected' : ''}>समीक्षा आवश्यक</option><option value="progress" ${ticket.status === 'progress' ? 'selected' : ''}>प्रगति में</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>समाधान हो गया</option><option value="rejected" ${ticket.status === 'rejected' ? 'selected' : ''}>अस्वीकृत</option></select><button class="primary-button" data-action="save-status" data-ticket-id="${ticket.id}">अपडेट सहेजें <span>→</span></button></div>`;
+  $('#modalContent').innerHTML = `<span class="modal-kicker">${ticket.id} · ${tr('Assistance request', 'सहायता अनुरोध')}</span><h2 class="modal-title">${escapeHtml(ticket.name)}</h2><p class="modal-subtitle">${escapeHtml(category.label)} · ${escapeHtml(category.sub)} · ${tr('received', 'प्राप्ति')}: ${escapeHtml(ticket.received)}</p><div class="detail-grid"><div class="detail-item"><span>${tr('Contact', 'संपर्क')}</span><strong>${escapeHtml(ticket.phone || '+91 98 7654 3210')}</strong></div><div class="detail-item"><span>${tr('Location', 'स्थान')}</span><strong>${escapeHtml(ticket.city)}</strong></div><div class="detail-item"><span>${tr('Assigned to', 'सौंपा गया')}</span><strong>${escapeHtml(category.assignee)}</strong></div><div class="detail-item"><span>${tr('Attachments', 'संलग्नक')}</span><strong>${ticket.files} ${tr(ticket.files === 1 ? 'file' : 'files', 'फाइल')}</strong></div></div><div class="modal-remark"><strong>${tr('Applicant-visible remark', 'आवेदक को दिखाई देने वाली टिप्पणी')}</strong><br>${escapeHtml(ticket.remark)}</div><div class="modal-actions"><select id="modalStatus"><option value="review" ${ticket.status === 'review' ? 'selected' : ''}>${statusInfo.review.label}</option><option value="progress" ${ticket.status === 'progress' ? 'selected' : ''}>${statusInfo.progress.label}</option><option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>${statusInfo.resolved.label}</option><option value="rejected" ${ticket.status === 'rejected' ? 'selected' : ''}>${statusInfo.rejected.label}</option></select><button class="primary-button" data-action="save-status" data-ticket-id="${ticket.id}">${tr('Save update', 'अपडेट सहेजें')} <span>→</span></button></div>`;
   $('#ticketModal').classList.remove('hidden');
 }
 
 function handleFiles(event) {
   const files = [...event.target.files];
   const valid = files.filter((file) => file.size <= 5 * 1024 * 1024);
-  if (valid.length !== files.length) showToast('Files over 5 MB were removed.');
+  if (valid.length !== files.length) showToast(tr('Files over 5 MB were removed.', '5 MB से बड़ी फाइलें हटा दी गईं।'));
   $('#fileList').innerHTML = valid.map((file) => `<div class="file-chip"><span>⌁ ${escapeHtml(file.name)}</span><span>${(file.size / 1024 / 1024).toFixed(1)} MB</span></div>`).join('');
   $('#fileInput')._validFiles = valid;
 }
@@ -153,13 +206,13 @@ function submitTicket(event) {
   const name = data.get('name').trim();
   const category = data.get('category');
   const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
-  const newTicket = { id: `VGF-${String(125 + tickets.length - 12).padStart(5, '0')}`, name, initials, city: data.get('address').trim(), category, received: 'Just now', status: 'review', remark: 'Request received and queued for initial review. The team will respond within 2 working days.', files: ($('#fileInput')._validFiles || []).length, phone: data.get('phone') };
+  const newTicket = { id: `VGF-${String(125 + tickets.length - 12).padStart(5, '0')}`, name, initials, city: data.get('address').trim(), category, received: tr('Just now', 'अभी-अभी'), status: 'review', remark: tr('Request received and queued for initial review. The team will respond within 2 working days.', 'अनुरोध प्राप्त हुआ और प्रारंभिक समीक्षा के लिए कतार में है। टीम 2 कार्य दिवसों में उत्तर देगी।'), files: ($('#fileInput')._validFiles || []).length, phone: data.get('phone') };
   tickets.unshift(newTicket);
   renderTickets();
   renderFocusChart();
   form.reset();
   $('#fileList').innerHTML = '';
-  showToast(`${newTicket.id} created and routed to ${categoryInfo[category].assignee}.`);
+  showToast(tr(`${newTicket.id} created and routed to ${categoryInfo[category].assignee}.`, `${newTicket.id} बनाया गया और ${categoryInfo[category].assignee} को सौंपा गया।`));
   showScreen('tickets');
 }
 
@@ -180,21 +233,21 @@ function bindEvents() {
       password.type = password.type === 'password' ? 'text' : 'password';
       actionButton.textContent = password.type === 'password' ? '◉' : '◌';
     }
-    if (action === 'forgot') { event.preventDefault(); showToast('For the demo, use any valid email and password.'); }
-    if (action === 'notifications') showToast('You have 4 requests that need review.');
+    if (action === 'forgot') { event.preventDefault(); showToast(tr('For the demo, use any valid email and password.', 'डेमो के लिए कोई भी मान्य ईमेल और पासवर्ड इस्तेमाल करें।')); }
+    if (action === 'notifications') showToast(tr('You have 4 requests that need review.', 'आपके पास 4 अनुरोध समीक्षा के लिए हैं।'));
     if (action === 'language') { sessionStorage.setItem('vgf-language', isHindi ? 'en' : 'hi'); window.location.reload(); }
-    if (action === 'help') showToast('Help centre: contact the VGF administrator for workflow guidance.');
-    if (action === 'toast') showToast('This workspace is included in the next demo iteration.');
+    if (action === 'help') showToast(tr('Help centre: contact the VGF administrator for workflow guidance.', 'सहायता केंद्र: प्रक्रिया मार्गदर्शन के लिए VGF प्रशासक से संपर्क करें।'));
+    if (action === 'toast') showToast(tr('This workspace is included in the next demo iteration.', 'यह खंड अगले डेमो संस्करण में शामिल होगा।'));
     if (action === 'open-ticket') openTicket(actionButton.dataset.ticketId);
     if (action === 'close-modal') $('#ticketModal').classList.add('hidden');
     if (action === 'save-status') {
       const ticket = tickets.find((item) => item.id === actionButton.dataset.ticketId);
       const nextStatus = $('#modalStatus').value;
       ticket.status = nextStatus;
-      ticket.remark = nextStatus === 'rejected' ? 'This request was not approved. The VGF team has added a reason and will contact the applicant.' : nextStatus === 'resolved' ? 'This request has been resolved by the VGF team.' : `Request moved to ${statusInfo[nextStatus].label.toLowerCase()} by the VGF team.`;
+      ticket.remark = nextStatus === 'rejected' ? tr('This request was not approved. The VGF team has added a reason and will contact the applicant.', 'यह अनुरोध स्वीकृत नहीं हुआ। VGF टीम ने कारण दर्ज किया है और आवेदक से संपर्क करेगी।') : nextStatus === 'resolved' ? tr('This request has been resolved by the VGF team.', 'यह अनुरोध VGF टीम द्वारा समाधान कर दिया गया है।') : tr(`Request moved to ${statusInfo[nextStatus].label.toLowerCase()} by the VGF team.`, `VGF टीम ने अनुरोध की स्थिति "${statusInfo[nextStatus].label}" कर दी है।`);
       $('#ticketModal').classList.add('hidden');
       renderTickets();
-      showToast(`${ticket.id} updated to ${statusInfo[nextStatus].label}.`);
+      showToast(tr(`${ticket.id} updated to ${statusInfo[nextStatus].label}.`, `${ticket.id} की स्थिति "${statusInfo[nextStatus].label}" की गई।`));
     }
   });
   $('#loginForm').addEventListener('submit', (event) => {
@@ -206,6 +259,30 @@ function bindEvents() {
   });
   $('#ticketForm').addEventListener('submit', submitTicket);
   $('#fileInput').addEventListener('change', handleFiles);
+  [$('#allTickets'), $('#recentTickets')].forEach((body) => {
+    body.addEventListener('click', (event) => {
+      const row = event.target.closest('tr[data-ticket-id]');
+      if (row) openTicket(row.dataset.ticketId);
+    });
+    body.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const row = event.target.closest('tr[data-ticket-id]');
+      if (!row) return;
+      event.preventDefault();
+      openTicket(row.dataset.ticketId);
+    });
+  });
+  $$('#ticketsScreen th[data-sort]').forEach((header) => header.addEventListener('click', () => {
+    const key = header.dataset.sort;
+    sortState = { key, dir: sortState.key === key ? -sortState.dir : 1 };
+    $$('#ticketsScreen th[data-sort]').forEach((other) => {
+      other.classList.remove('sort-asc', 'sort-desc');
+      other.setAttribute('aria-sort', 'none');
+    });
+    header.classList.add(sortState.dir === 1 ? 'sort-asc' : 'sort-desc');
+    header.setAttribute('aria-sort', sortState.dir === 1 ? 'ascending' : 'descending');
+    renderTickets();
+  }));
   ['ticketSearch', 'statusFilter', 'categoryFilter'].forEach((id) => document.getElementById(id).addEventListener('input', renderTickets));
   $('#ticketModal').addEventListener('click', (event) => { if (event.target.id === 'ticketModal') $('#ticketModal').classList.add('hidden'); });
 }
